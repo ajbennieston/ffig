@@ -83,7 +83,25 @@ def to_output_ctype(t, python_version):
     if t.kind == TypeKind.POINTER and t.pointee.kind == TypeKind.RECORD:
         return 'c_object_p'
     return to_ctype(t, python_version)
-    
+
+def to_hint_type(t):
+    if t.kind == TypeKind.VOID:
+        return None
+    if t.kind == TypeKind.INT:
+        return 'int'
+    if t.kind == TypeKind.DOUBLE:
+        return 'float'
+    if t.kind == TypeKind.BOOL:
+        return 'bool'
+    if t.kind == TypeKind.POINTER:
+        if t.pointee.kind == TypeKind.CHAR_S:
+            return 'str'
+        if t.pointee.kind == TypeKind.RECORD:
+            # This is a hack until we can get an unqualified type from libclang
+            # FIXME: Return the class name when doing so can be made to work.
+            return 'Any'
+    raise Exception('No ctypes equivalent is defined for type {}'.format(t.name))
+
 def to_cpp_type(t):
     if t.kind == TypeKind.VOID:
         return 'void'

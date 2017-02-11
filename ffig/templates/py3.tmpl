@@ -1,5 +1,7 @@
 import os
 from ctypes import *
+from typing import *
+
 c_object_p = POINTER(c_void_p)
 
 class c_string_p(c_char_p):
@@ -26,9 +28,9 @@ class {{class.name}}_error(Exception):
     def __str__(self):
         return self.value
 
-class {{class.name}}:
+class {{class.name}}(object):
   {% if not class.is_abstract %} {% for method in class.constructors %}
-  def __init__(self, {% for arg in method.arguments %} {{arg.name}}=None,{% endfor %} _p=None):
+  def __init__(self, {% for arg in method.arguments %} {{arg.name}}: {{arg.type|to_hint_type}}=None,{% endfor %} _p=None):
     if _p:
       self.ptr = _p
     else:
@@ -37,7 +39,7 @@ class {{class.name}}:
       if rc != 0:
         raise {{class.name}}_error()
   {% endfor %} {% endif %} {% for method in class.methods %}
-  def {{method.name}}(self{% for arg in method.arguments %}, {{arg.name}} {% endfor %}): {% if method.returns_void %}
+  def {{method.name}}(self{% for arg in method.arguments %}, {{arg.name}}: {{arg.type|to_hint_type}} {% endfor %}) -> {{method.return_type|to_hint_type}}: {% if method.returns_void %}
     rc = conf.lib.{{class.name}}_{{method.name}}(self, {% for arg in method.arguments %}{{arg.name}}{% if not loop.last %}, {% endif %}{% endfor %})
     if rc != 0:
       raise {{class.name}}_error() {% elif not method.returns_sub_object %}
