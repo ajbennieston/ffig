@@ -91,7 +91,8 @@ methodList = [
 
   ("{{ class.name }}_{{method.name}}",
   [{{class.name}}{% for arg in method.arguments %}, {{arg.type|to_ctype(3)}} {% endfor %}{% if not method.returns_void %}, POINTER({{method.return_type|to_output_ctype(3)}}){% endif %}],
-  c_int){% if not loop.last %},{% endif %}{% endfor %}
+  c_int){% if not loop.last %},
+  {% endif %}{% endfor %}
 ]
 
 # library loading and method registrations
@@ -105,9 +106,6 @@ def register_method(lib, item):
 
   if len(item) >= 3:
     func.restype = item[2]
-    
-  if len(item) == 4:
-    func.errcheck = item[3]
 
 class CachedProperty(object):
 
