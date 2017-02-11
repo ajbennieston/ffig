@@ -9,14 +9,16 @@ def generator(module_name, binding, api_classes, env, output_dir):
     if not os.path.exists(module_dir):
         os.makedirs(module_dir)
 
-    o = os.path.join(module_dir, '__init__.py')
-    generators.generate_single_output_file(module_name, '__init__.py.tmpl', api_classes, env, o)
+    output_templates = {'__init__.py': '__init__.py.tmpl',
+                        'interop_py2.py': 'py2.tmpl',
+                        'interop_py3.py': 'py3.tmpl'}
 
-    for o in [os.path.join(module_dir, x) for x in ['interop_py2.py', 'interop_py3.py']]:
+    for filename, template in output_templates.items():
+        o = os.path.join(module_dir, filename)
         generators.generate_single_output_file(
-            module_name, 'py.tmpl', api_classes, env, o)
+            module_name, template, api_classes, env, o)
 
-    return [os.path.join(module_dir, x) for x in ['__init__.py', 'interop_py2.py', 'interop_py3.py']]
+    return output_templates.keys()
 
 
 def setup_plugin(context):
