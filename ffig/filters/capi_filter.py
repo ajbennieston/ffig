@@ -58,7 +58,7 @@ def c_object(v,t):
 
 
 #Python filter to translate C-type to Python ctype type
-def to_ctype(t):
+def to_ctype(t, version):
     if t.kind == TypeKind.VOID:
         return None
     if t.kind == TypeKind.INT:
@@ -69,13 +69,17 @@ def to_ctype(t):
         return 'bool'
     if t.kind == TypeKind.POINTER:
         if t.pointee.kind == TypeKind.CHAR_S:
-            return 'c_string_p'
+            if version == 2:
+                return 'c_char_p'
+            if version == 3:
+                return 'c_string_p'
+            raise Exception("Unrecognized Python major version {}".format(version));
         if t.pointee.kind == TypeKind.RECORD:
             # This is a hack until we can get an unqualified type from libclang
             return t.pointee.name.replace('const ','')
     raise Exception('No ctypes equivalent is defined for type {}'.format(t.name))
 
-def to_output_ctype(t):
+def to_output_ctype(t, version):
     if t.kind == TypeKind.VOID:
         return None
     if t.kind == TypeKind.INT:
@@ -86,7 +90,11 @@ def to_output_ctype(t):
         return 'bool'
     if t.kind == TypeKind.POINTER:
         if t.pointee.kind == TypeKind.CHAR_S:
-            return 'c_string_p'
+            if version == 2:
+                return 'c_char_p'
+            if version == 3:
+                return 'c_string_p'
+            raise Exception("Unrecognized Python major version {}".format(version));
         if t.pointee.kind == TypeKind.RECORD:
             return 'c_object_p'
     raise Exception('No ctypes equivalent is defined for type {}'.format(t.name))
