@@ -56,7 +56,7 @@ if(Go_FOUND)
 endif()
 
 ffig_add_library(NAME Shape INPUTS input/Shape.h ${all_ffig_bindings})
-ffig_add_library(NAME Tree INPUTS input/Tree.h PYTHON CPP)
+ffig_add_library(NAME Tree INPUTS input/Tree.h ${all_ffig_bindings})
 ffig_add_library(NAME Asset INPUTS input/Asset.h PYTHON)
     
 add_subdirectory(tests/src)
@@ -93,8 +93,14 @@ add_test(
 
 if(Ruby_FOUND)
   add_test(
-    NAME test_ruby_bindings
-    COMMAND ${RUBY_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/TestShape.rb ${CMAKE_SOURCE_DIR}/tests/TestShape.rb
+    NAME test_shape_ruby_bindings
+    COMMAND ${RUBY_EXECUTABLE} 
+    ${CMAKE_SOURCE_DIR}/tests/TestShape.rb
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/generated)
+  add_test(
+    NAME test_tree_ruby_bindings
+    COMMAND ${RUBY_EXECUTABLE} 
+    ${CMAKE_SOURCE_DIR}/tests/TestTree.rb 
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/generated)
 endif()
 

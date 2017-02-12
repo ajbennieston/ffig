@@ -8,10 +8,13 @@ module {{class.name}}_c
   attach_function :{{class.name}}_dispose, [:pointer], :void
   attach_function :{{class.name}}_error, [], :string
   attach_function :{{class.name}}_clear_error, [], :void 
-  {% for method in class.methods %}
-  attach_function :{{class.name}}_{{method.name}}, [:pointer{% for arg in method.arguments %}, :{{arg.type|to_ruby_type}}{% endfor %}, :pointer], :int{% endfor %}
-  {% for impl in impl_classes %}{% for method in impl.constructors %}
-  attach_function :{{class.name}}_{{impl.name}}_create, [{% for arg in method.arguments %}:{{arg.type|to_ruby_type}},{% endfor %} :pointer], :int{% endfor %}{% endfor %}
+  {% for method in class.methods %} {% if method.returns_void %}
+  attach_function :{{class.name}}_{{method.name}}, [:pointer{% for arg in method.arguments %}, :{{arg.type|to_ruby_type}}{% endfor %}], :int{% else %}
+  attach_function :{{class.name}}_{{method.name}}, [:pointer{% for arg in method.arguments %}, :{{arg.type|to_ruby_type}}{% endfor %}, :pointer], :int{% endif %}{% endfor %}
+  {% if not class.is_abstract %} {% for method in class.constructors %}
+  attach_function :{{class.name}}_{{method.name}}_create, [{% for arg in method.arguments %}:{{arg.type|to_ruby_type}},{% endfor %} :pointer], :int{% endfor %} {% endif %}
+  {% for impl in impl_classes %} {% for method in impl.constructors %}
+  attach_function :{{class.name}}_{{impl.name}}_create, [{% for arg in method.arguments %}:{{arg.type|to_ruby_type}},{% endfor %} :pointer], :int{% endfor %} {% endfor %}
 end
 
 class {{class.name}}Error < Exception
@@ -23,23 +26,44 @@ class {{class.name}}Error < Exception
 end
 
 class {{class.name}}
+  {% if class.is_abstract %}
   def initialize(objptr)
     @ptr = objptr.get_pointer(0)
     ObjectSpace.define_finalizer( self, self.class.finalize(@ptr) )
   end
+  {% else %}{% for method in class.constructors %} 
+  def initialize({% for arg in method.arguments %}{{arg.name}}=nil, {% endfor %} objptr=nil)
+    if objptr == nil
+      objptr = FFI::MemoryPointer.new :pointer
+      rc = {{class.name}}_c.{{class.name}}_{{class.name}}_create({% for arg in method.arguments %}{{arg.name}}, {% endfor %}objptr)
+      if rc != 0
+        raise {{class.name}}Error
+      end
+      @ptr = objptr.get_pointer(0)
+    else
+      @ptr = objptr.get_pointer(0)
+    end
+    ObjectSpace.define_finalizer( self, self.class.finalize(@ptr) )
+  end{% endfor %} 
+  {% endif %}
 
   def self.finalize(ptr)
     proc { {{class.name}}_c.{{class.name}}_dispose(ptr) }
   end
   {% for method in class.methods %}
-  def {{method.name}}()
+  def {{method.name}}({% for arg in method.arguments %}{{arg.name}}{% if not loop.last %}, {% endif %}{% endfor %}) {% if method.returns_void %}
+    rc = {{class.name}}_c.{{class.name}}_{{method.name}}(@ptr{% for arg in method.arguments %}, {{arg.name}}{% endfor %})
+    if rc != 0
+      raise ShapeError
+    end 
+  end{% else %}
     dptr = {{method.return_type|to_ruby_output_type}}
-    rc = {{class.name}}_c.{{class.name}}_{{method.name}}(@ptr, dptr)
+    rc = {{class.name}}_c.{{class.name}}_{{method.name}}(@ptr{% for arg in method.arguments %}, {{arg.name}}{% endfor %}, dptr)
     if rc != 0
       raise ShapeError
     end
-    dptr.{{method.return_type|restore_ruby_type}}
-  end
+    dptr.{{method.return_type|restore_ruby_type}} 
+  end {% endif %}
 {% endfor %}end
 
 {% for impl in impl_classes %}{% for method in impl.constructors %}
