@@ -18,7 +18,7 @@ static {{module.name}}_{{impl.name}}_create_Ptr {{module.name}}_{{impl.name}}_cr
 
 {% for method in class.methods %}
 typedef int (*{{module.name}}_{{class.name}}_{{method.name}}_Ptr)(const void*{% for arg in method.arguments %}, {{arg.type|to_c}}{% endfor %}{% if not method.returns_void %}, {{method.return_type|to_c}}* rv{% endif %});
-static {{module.name}}_{class.name}}_{{method.name}}_Ptr {{module.name}}_{{class.name}}_{{method.name}}_ptr;
+static {{module.name}}_{{class.name}}_{{method.name}}_Ptr {{module.name}}_{{class.name}}_{{method.name}}_ptr;
 {% endfor %} 
 
 
